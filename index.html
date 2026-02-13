@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Crypto Content Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-white min-h-screen p-8">
+
+  <div class="max-w-5xl mx-auto">
+    <h1 class="text-3xl font-bold mb-6 text-purple-400">
+      Daily Crypto Content Dashboard
+    </h1>
+
+    <div id="content" class="space-y-8"></div>
+  </div>
+
+<script>
+async function loadData() {
+  const res = await fetch('data/today.json');
+  const data = await res.json();
+
+  const container = document.getElementById('content');
+
+  container.innerHTML = `
+    <div class="bg-slate-800 p-6 rounded">
+      <h2 class="text-xl font-semibold mb-3">Market Summary</h2>
+      <p>${data.market_summary}</p>
+    </div>
+
+    <div class="bg-slate-800 p-6 rounded">
+      <h2 class="text-xl font-semibold mb-3">Trending Narratives</h2>
+      <ul class="list-disc pl-6">
+        ${data.narratives.map(n => `<li>${n}</li>`).join('')}
+      </ul>
+    </div>
+
+    <div class="bg-slate-800 p-6 rounded">
+      <h2 class="text-xl font-semibold mb-3">Token Unlocks</h2>
+      <ul class="list-disc pl-6">
+        ${data.unlocks.map(u => `<li>${u}</li>`).join('')}
+      </ul>
+    </div>
+
+    <div class="bg-slate-800 p-6 rounded">
+      <h2 class="text-xl font-semibold mb-4">Binance Square Drafts</h2>
+      ${data.binance_posts.map((p,i)=>`
+        <div class="mb-4">
+          <p id="b${i}" class="mb-2">${p}</p>
+          <button onclick="copyText('b${i}')" class="bg-purple-600 px-3 py-1 rounded">
+            Copy
+          </button>
+        </div>
+      `).join('')}
+    </div>
+
+    <div class="bg-slate-800 p-6 rounded">
+      <h2 class="text-xl font-semibold mb-4">X Drafts</h2>
+      ${data.x_posts.map((p,i)=>`
+        <div class="mb-4">
+          <p id="x${i}" class="mb-2">${p}</p>
+          <button onclick="copyText('x${i}')" class="bg-purple-600 px-3 py-1 rounded">
+            Copy
+          </button>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function copyText(id) {
+  const text = document.getElementById(id).innerText;
+  navigator.clipboard.writeText(text);
+}
+
+loadData();
+</script>
+
+</body>
+</html>
