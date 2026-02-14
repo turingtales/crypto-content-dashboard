@@ -4,10 +4,11 @@ import os
 
 HF_TOKEN = os.environ["HF_TOKEN"]
 
-MODEL_URL = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2"
+MODEL_URL = "https://router.huggingface.co/hf-inference/models/mistralai/Mistral-7B-Instruct-v0.2"
 
 headers = {
-    "Authorization": f"Bearer {HF_TOKEN}"
+    "Authorization": f"Bearer {HF_TOKEN}",
+    "Content-Type": "application/json"
 }
 
 def get_market_data():
@@ -20,23 +21,28 @@ def get_market_data():
 def generate_posts(summary):
 
     prompt = f"""
+    You are a crypto content assistant.
+
     Based on this crypto summary:
     {summary}
 
-    Return valid JSON only with:
+    Return ONLY valid JSON with this exact structure:
 
-    market_summary: string
-    narratives: array of 3 short items
-    unlocks: array of 2 short items
-    binance_posts: array of 3 engaging posts
-    x_posts: array of 3 posts under 280 characters
+    {{
+      "market_summary": "string",
+      "narratives": ["item1","item2","item3"],
+      "unlocks": ["item1","item2"],
+      "binance_posts": ["post1","post2","post3"],
+      "x_posts": ["post1","post2","post3"]
+    }}
     """
 
     payload = {
         "inputs": prompt,
         "parameters": {
-            "max_new_tokens": 800,
-            "temperature": 0.7
+            "max_new_tokens": 700,
+            "temperature": 0.7,
+            "return_full_text": False
         }
     }
 
@@ -46,7 +52,7 @@ def generate_posts(summary):
     if isinstance(result, dict) and "error" in result:
         raise Exception(result["error"])
 
-    generated_text = result[0]["generated_text"]
+    generated_text = result[0]["generated_text"].strip()
 
     json_start = generated_text.find("{")
     json_text = generated_text[json_start:]
