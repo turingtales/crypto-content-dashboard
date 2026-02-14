@@ -22,8 +22,9 @@ jobs:
 
       - name: Run generator
         env:
-          OPENAI_KEY: ${{ secrets.OPENAI_KEY }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: python generate.py
+
 
       - name: Commit changes
         run: |
