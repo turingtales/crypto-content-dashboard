@@ -1,9 +1,14 @@
 import requests
 import json
 import os
-from datetime import datetime
 
-OPENAI_KEY = os.environ["OPENAI_KEY"]
+HF_TOKEN = os.environ["HF_TOKEN"]
+
+MODEL_URL = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2"
+
+headers = {
+    "Authorization": f"Bearer {HF_TOKEN}"
+}
 
 def get_market_data():
     url = "https://api.coingecko.com/api/v3/global"
@@ -12,46 +17,46 @@ def get_market_data():
     dominance = r["data"]["market_cap_percentage"]["btc"]
     return f"Total market cap: ${market_cap:,.0f}. BTC dominance: {dominance:.2f}%."
 
-def get_news():
-    return "AI tokens trending. Bitcoin steady. ETH ecosystem active."
-
 def generate_posts(summary):
-    headers = {
-        "Authorization": f"Bearer {OPENAI_KEY}",
-        "Content-Type": "application/json"
-    }
 
     prompt = f"""
     Based on this crypto summary:
     {summary}
 
-    Create:
-    3 Binance Square posts detailed but engaging.
-    3 X posts under 280 characters.
+    Return valid JSON only with:
 
-    Return JSON with:
-    market_summary
-    narratives array
-    unlocks array
-    binance_posts array
-    x_posts array
+    market_summary: string
+    narratives: array of 3 short items
+    unlocks: array of 2 short items
+    binance_posts: array of 3 engaging posts
+    x_posts: array of 3 posts under 280 characters
     """
 
-    data = {
-        "model": "gpt-4o-mini",
-        "messages": [{"role": "user", "content": prompt}]
+    payload = {
+        "inputs": prompt,
+        "parameters": {
+            "max_new_tokens": 800,
+            "temperature": 0.7
+        }
     }
 
-    r = requests.post("https://api.openai.com/v1/chat/completions",
-                      headers=headers, json=data)
+    response = requests.post(MODEL_URL, headers=headers, json=payload)
+    result = response.json()
 
-    content = r.json()["choices"][0]["message"]["content"]
-    return json.loads(content)
+    if isinstance(result, dict) and "error" in result:
+        raise Exception(result["error"])
+
+    generated_text = result[0]["generated_text"]
+
+    json_start = generated_text.find("{")
+    json_text = generated_text[json_start:]
+
+    return json.loads(json_text)
 
 def main():
     market = get_market_data()
-    news = get_news()
-    summary = market + " " + news
+    summary = market + " AI tokens trending. ETH ecosystem active."
+
     output = generate_posts(summary)
 
     with open("data/today.json", "w") as f:
